@@ -1,4 +1,4 @@
--- PaperFlow 0001_init — implements SPEC.md §5 (CONTRACT).
+-- Paper2Cloud 0001_init — implements SPEC.md §5 (CONTRACT).
 -- Append-only: never edit this file once applied; add 0002_*.sql.
 
 create extension if not exists pgcrypto;

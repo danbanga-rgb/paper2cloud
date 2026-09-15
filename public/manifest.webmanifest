@@ -1,6 +1,6 @@
 {
-  "name": "PaperFlow",
-  "short_name": "PaperFlow",
+  "name": "Paper2Cloud",
+  "short_name": "Paper2Cloud",
   "start_url": "/capture",
   "display": "standalone",
   "background_color": "#f6f4ef",

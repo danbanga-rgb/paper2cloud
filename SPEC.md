@@ -1,6 +1,6 @@
 # Build Spec — Store Paper Capture → QuickBooks Desktop
 
-Working name: **PaperFlow** (rename freely). Version 1.0, 2026-09-15.
+Name: **Paper2Cloud**. Version 1.0, 2026-09-15.
 
 This document is the contract for the implementing agent. Sections marked **CONTRACT** must be implemented exactly as written (schemas, state machines, field names, acceptance thresholds). Everything else is guidance; deviate only with a written reason in the PR.
 
@@ -341,7 +341,7 @@ Canonical `request_json` is produced by the app; the Timesheet App's qbXML layer
 
 **Vendor** → `VendorAdd { Name }` → store `ListID`, `EditSequence`.
 
-**Bill** → `BillAdd { VendorRef.ListID, TxnDate, RefNumber = ref_number, Memo = "PaperFlow doc <short id>, uploaded by <name>", ExpenseLineAdd[{ AccountRef.ListID = expense_account (settings default_cogs_account_id in MVP), Amount = total }] }`. Pre-check: `BillQuery` by `RefNumber` + vendor over ±90 days; if found, mark sync `skipped`, copy its `TxnID`, exception `duplicate_suspected` for owner.
+**Bill** → `BillAdd { VendorRef.ListID, TxnDate, RefNumber = ref_number, Memo = "Paper2Cloud doc <short id>, uploaded by <name>", ExpenseLineAdd[{ AccountRef.ListID = expense_account (settings default_cogs_account_id in MVP), Amount = total }] }`. Pre-check: `BillQuery` by `RefNumber` + vendor over ±90 days; if found, mark sync `skipped`, copy its `TxnID`, exception `duplicate_suspected` for owner.
 
 **Credit memo** → `VendorCreditAdd` with the same shape; store `TxnID`.
 

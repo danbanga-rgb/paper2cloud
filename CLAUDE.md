@@ -1,6 +1,6 @@
 # CLAUDE.md — rules for any agent working in this repo
 
-You are implementing **PaperFlow**, a store paper-capture app that pushes Bills and Bill Payments into QuickBooks Desktop. Read `SPEC.md` before anything else. This file tells you how to work; the spec tells you what to build.
+You are implementing **Paper2Cloud**, a store paper-capture app that pushes Bills and Bill Payments into QuickBooks Desktop. Read `SPEC.md` before anything else. This file tells you how to work; the spec tells you what to build.
 
 ## Ground rules
 

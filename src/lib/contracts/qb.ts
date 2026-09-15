@@ -1,7 +1,7 @@
 /**
  * SPEC §9 — Canonical QuickBooks request payloads (CONTRACT).
  *
- * This is the contract between PaperFlow and the Timesheet App's qbXML service. PaperFlow
+ * This is the contract between Paper2Cloud and the Timesheet App's qbXML service. Paper2Cloud
  * writes these into `qb_sync.request_json`; the consumer renders qbXML from them. Field names
  * mirror qbXML on purpose so the renderer is mechanical. Money here is a decimal string with
  * two places ("842.10") because that is what qbXML wants and it avoids float drift in JSON.

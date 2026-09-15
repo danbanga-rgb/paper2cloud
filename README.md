@@ -1,4 +1,4 @@
-# PaperFlow
+# Paper2Cloud
 
 Store paper (vendor invoices, credit memos, handwritten checks) → phone capture → vision-model extraction → uploader confirmation → QuickBooks Desktop via qbXML. No accountant in the loop.
 

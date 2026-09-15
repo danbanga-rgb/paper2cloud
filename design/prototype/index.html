@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>PaperFlow — clickable prototype</title>
+<title>Paper2Cloud — clickable prototype</title>
 <style>
   :root{
     --bg:#f6f4ef; --card:#fff; --ink:#1c1c1a; --muted:#6b6b66; --line:#e4e1d9;
@@ -101,7 +101,7 @@
 </head>
 <body>
 <div id="side">
-  <h3>PaperFlow prototype</h3>
+  <h3>Paper2Cloud prototype</h3>
   Clickable, mocked data, no backend. Open on an iPhone: the Invoice/Check buttons use the real camera.
   <h3 style="margin-top:14px">Uploader flows</h3>
   <a href="#s1">S1 Home</a><a href="#s2">S2 Capture invoice</a><a href="#s3">S3 Capture check</a><a href="#s5">S5 Confirm invoice</a><a href="#s5dup">S5 Duplicate block</a><a href="#s5type">S5 Type conflict</a><a href="#s6">S6/S7 Confirm check + apply</a><a href="#s8">S8 Note</a><a href="#s9">S9 History</a>
@@ -162,7 +162,7 @@ const tabs=(on)=>`<nav class="tabs"><a href="#s1" class="${on==="home"?"on":""}"
 // ---------- S1 Home ----------
 function s1(){
   const waiting=state.bills.filter(b=>b.status==="Waiting for you");
-  return bar("PaperFlow")+`<main>
+  return bar("Paper2Cloud")+`<main>
     <div class="grid3">
       <button class="big" onclick="startCapture('invoice')">🧾<span>Invoice</span><small>one or more pages</small></button>
       <button class="big alt" onclick="startCapture('check')">✍️<span>Check</span><small>several per photo ok</small></button>
@@ -315,7 +315,7 @@ function s8(){return bar("Note","s3b")+`<main><div class="card">
 function s9(){return bar("My uploads")+`<main><div class="card">${state.history.map(h=>`<div class="row"><div class="thumb">📄</div><div class="grow"><div class="t">${h.t}</div><div class="s">${h.when}${h.s==="In QuickBooks"?" · Bill TxnID 3F2A-1…":""}</div></div><span class="chip ${h.cls}">${h.s}</span></div>`).join("")}</div></main>`+tabs("hist")}
 
 // ---------- Owner ----------
-const onav=(on)=>`<div class="topnav"><b style="margin-right:12px">PaperFlow</b><a href="#s10" class="${on==="s10"?"on":""}">Needs attention <span class="chip red">5</span></a><a href="#s11" class="${on==="s11"?"on":""}">Bills</a><a href="#s11" >Payments</a><a href="#s12" class="${on==="s12"?"on":""}">Open AP</a><a href="#s11">Archive</a><a href="#s11">Vendors</a><a href="#s11">Settings</a></div>`;
+const onav=(on)=>`<div class="topnav"><b style="margin-right:12px">Paper2Cloud</b><a href="#s10" class="${on==="s10"?"on":""}">Needs attention <span class="chip red">5</span></a><a href="#s11" class="${on==="s11"?"on":""}">Bills</a><a href="#s11" >Payments</a><a href="#s12" class="${on==="s12"?"on":""}">Open AP</a><a href="#s11">Archive</a><a href="#s11">Vendors</a><a href="#s11">Settings</a></div>`;
 function s10(){return onav("s10")+`<main>
   <h2>New vendor (1)</h2>
   <table><tr><td style="width:56px"><div class="thumb">inv</div></td><td><b>Bimbo Bakeries USA</b> · #B-90211 · $96.40<br><span class="s">Maria · today 2:10 PM · uploader typed “Bimbo Bakeries”</span></td><td class="acts"><button class="act p" onclick="toast('Vendor approved → VendorAdd queued')">Approve “Bimbo Bakeries”</button><button class="act">Merge into…</button></td></tr></table>

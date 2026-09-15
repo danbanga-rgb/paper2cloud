@@ -1,5 +1,5 @@
 {
-  "name": "paperflow",
+  "name": "paper2cloud",
   "version": "0.1.0",
   "private": true,
   "description": "Store paper capture → extraction → QuickBooks Desktop (qbXML). Scaffold.",

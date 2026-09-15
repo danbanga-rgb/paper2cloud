@@ -43,7 +43,7 @@ export interface StagedRequest {
 }
 
 export function memoFor(documentId: string, uploaderName: string, extra?: string | null): string {
-  const base = `PaperFlow ${documentId.slice(0, 8)} · ${uploaderName}`;
+  const base = `Paper2Cloud ${documentId.slice(0, 8)} · ${uploaderName}`;
   return extra ? `${base} · ${extra}`.slice(0, 4095) : base;
 }
 
