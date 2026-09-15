@@ -25,7 +25,9 @@ Goal: staff use the PWA instead of WhatsApp; the owner sees everything in lists.
 - [ ] PWA shell: manifest, service worker with an IndexedDB upload queue, install prompt, Web Push subscription.
 - [ ] Capture flows exactly as `design/screens.md` S2–S6 (invoice multi-page, check multi-per-image, other).
 - [ ] Upload → `documents`/`pages` rows → extraction job → `extractions` row → status `needs_confirmation` → push notification.
-- [ ] Confirm card (invoice) with low-confidence highlighting, vendor proposal (`src/lib/vendor/resolve.ts`), duplicate block (§7.5).
+- [ ] Migration 0002 per SPEC §14b (printed_total, services account, statement tables, statement_backfill reason).
+- [ ] Composite photos: `also_contains` → one document per kind sharing the pages; check card pre-ticked from the invoice in the same photo.
+- [ ] Confirm card (invoice) with adjusted-vs-printed total choice, low-confidence highlighting, vendor proposal (`src/lib/vendor/resolve.ts`), duplicate block (§7.5).
 - [ ] Confirm writes `bills` via server route after `validateInvoiceConfirm`; alias learned.
 - [ ] Owner: Bills list, Documents list, image viewer (signed URLs ≤ 10 min), CSV export.
 - [ ] Check flow may stop at "amount/payee/check#" confirmation in this phase — application UI is Phase 2 — but the payment row is created and an `unapplied_payment` exception is raised so nothing is lost.
@@ -42,6 +44,7 @@ Goal: every check is applied to invoices; the owner's queue is small.
 - [ ] Needs-attention queue (S10) with one-action resolution per reason code.
 - [ ] Open AP by vendor (S12) from the `open_ap_by_vendor` view; archive search (S13).
 - [ ] Notes with money → `money_note` exception.
+- [ ] Statement confirm: rows reconcile/backfill bills (`statement_backfill`), handwritten month groups → "ask to pay this group".
 - [ ] Pay requests (SPEC S16, ADR 0005): uploader ticks invoices → owner approves/declines from the queue → approved set pre-ticks the later check confirm → request `fulfilled`.
 
 **Exit:** owner queue < 10 items/week for two consecutive weeks; zero checks left in `unapplied_payment` older than 7 days without an explicit owner decision.

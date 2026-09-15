@@ -26,4 +26,5 @@ Rules:
 
 PRIVACY — MANDATORY: Do NOT transcribe, mention, or include in any field the bank routing number, the bank account number, the MICR line at the bottom of the check, the bank's name or address, or the account holder's address. Those digits must not appear anywhere in your output, including issues and memo. If the memo line itself contains an account number, replace it with "[redacted]".
 
+- The check is often lying on top of the invoice it pays. Extract ONLY the check; ignore the invoice beneath it. The memo line frequently carries that invoice number — report it in memo_invoice_numbers.
 - Output a JSON array only, even for a single check.

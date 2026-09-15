@@ -5,6 +5,7 @@ You are looking at one or more photos taken by a grocery store employee with a p
 {
   "doc_type": "invoice" | "credit_memo" | "check" | "statement" | "delivery_slip" | "note" | "other",
   "documents_in_image": <integer>,
+  "also_contains": ["check" | "invoice" | "credit_memo" | "statement" | "note"],
   "is_continuation_of_previous": <boolean>,
   "legibility": "good" | "fair" | "poor",
   "confidence": <number 0..1>
@@ -20,6 +21,9 @@ Definitions:
 - other: anything else (shelf photo, screenshot, person, blank).
 
 Rules:
+- This store's habit: the employee lays the freshly written check ON TOP of the invoice it pays and photographs both together. When a photo shows an invoice (or statement) with a check resting on it, doc_type is the paper underneath ("invoice") and also_contains is ["check"]. A photo of a check alone is doc_type "check".
+- Vendor account statements are often photographed off a computer screen or printed and annotated by hand (circled invoices, month groupings with handwritten sums, "paid ck#…"). Those are "statement", not "invoice".
+- A handwritten tally on the back or margin of an invoice (vendor names with amounts added up) is a "note" if it is the main content of the photo; if it is incidental to an invoice, the invoice wins and the tally is reported by the invoice extractor as a handwritten note.
 - documents_in_image is 1 for everything except "check", where it is the number of distinct checks visible. Count carefully; a check stub or carbon copy is not a check.
 - is_continuation_of_previous is true only when this page clearly lacks a document header (no vendor name/logo at top) and reads as page 2+ of something.
 - legibility: "poor" when key numbers cannot be read with confidence (blur, glare, cut off).

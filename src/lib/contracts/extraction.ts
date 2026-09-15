@@ -49,6 +49,12 @@ export type Field<T> = { value: T | null; confidence: number };
 export const ClassificationSchema = z.object({
   doc_type: DocTypeSchema,
   documents_in_image: z.number().int().min(0),
+  /**
+   * Other document kinds physically present in the same photo. The store's convention is to lay the
+   * written check on top of the invoice it pays and photograph both together, so an invoice photo
+   * very often also contains a check. Each listed kind becomes its own `documents` row sharing the page.
+   */
+  also_contains: z.array(DocTypeSchema).default([]),
   is_continuation_of_previous: z.boolean(),
   legibility: z.enum(["good", "fair", "poor"]),
   confidence: Confidence,
@@ -71,6 +77,16 @@ export const InvoicePayloadSchema = z.object({
   is_credit: z.boolean(),
   paid_stamp_or_cod: field(z.boolean()),
   check_number_referenced: field(z.string()),
+  /** date written next to "paid" / the check number, if any */
+  paid_date_referenced: field(IsoDate),
+  /**
+   * Staff cross out the printed total and write the amount actually owed after returns
+   * ("I return drumsticks 1 box · 750.04 − 60.52 = 689.52"). When present this, not `total`,
+   * is what the bill should carry; the printed total is kept for audit. Confidence < 0.85 forces review.
+   */
+  handwritten_adjusted_total: field(z.number()),
+  /** every handwritten note on the paper, transcribed briefly (returns, "paid", tallies, per-unit prices) */
+  handwritten_notes: z.array(z.string()),
   page_count_seen: z.number().int().min(1),
   issues: z.array(z.string()),
 });
@@ -94,6 +110,30 @@ export type CheckPayload = z.infer<typeof CheckPayloadSchema>;
 export const ChecksPayloadSchema = z.array(CheckPayloadSchema).min(1);
 
 // ---------------------------------------------------------------------------
+// Vendor statement — a list of open invoices. Used to reconcile open AP and to backfill bills that
+// were never photographed (the store's biggest vendor had 18 open invoices on one statement).
+// ---------------------------------------------------------------------------
+export const StatementRowSchema = z.object({
+  date: field(IsoDate),
+  kind: z.enum(["invoice", "credit", "payment", "other"]),
+  ref_number: field(z.string()),
+  amount: field(z.number()), // positive; kind carries the sign
+  due_date: field(IsoDate),
+});
+export const StatementPayloadSchema = z.object({
+  vendor_name_printed: field(z.string()),
+  customer_name_printed: field(z.string()),
+  statement_date: field(IsoDate),
+  rows: z.array(StatementRowSchema),
+  total_balance: field(z.number()),
+  /** handwritten groupings like "June 2026: 1,186.69 + 816.31 + … = 4,582.52" */
+  handwritten_groups: z.array(z.object({ label: z.string(), ref_numbers: z.array(z.string()), total: z.number().nullable() })),
+  handwritten_notes: z.array(z.string()),
+  issues: z.array(z.string()),
+});
+export type StatementPayload = z.infer<typeof StatementPayloadSchema>;
+
+// ---------------------------------------------------------------------------
 // Record-only types carry a minimal payload
 // ---------------------------------------------------------------------------
 export const RecordOnlyPayloadSchema = z.object({
@@ -113,6 +153,8 @@ export function payloadSchemaFor(docType: DocType) {
       return InvoicePayloadSchema;
     case "check":
       return ChecksPayloadSchema;
+    case "statement":
+      return StatementPayloadSchema;
     default:
       return RecordOnlyPayloadSchema;
   }

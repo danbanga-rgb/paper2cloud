@@ -74,10 +74,10 @@ Existing qbXML Web Connector service (Timesheet App codebase) → QuickBooks Des
 
 | `doc_type` | QB effect | Notes |
 |---|---|---|
-| `invoice` | `BillAdd` | May span multiple pages (one document, N pages). |
+| `invoice` | `BillAdd` | May span multiple pages. **Usually photographed with the paying check lying on top** → classification `also_contains: ["check"]`, two documents share the page. Bill amount = `handwritten_adjusted_total` when present, else `total`. |
 | `credit_memo` | `VendorCreditAdd` | DSD returns/shortages. Negative-total invoices are reclassified to this. |
 | `check` | `BillPaymentCheckAdd` (or `CheckAdd` if applied to nothing) | One image may contain several checks → several documents. |
-| `statement` | none (record) | Vendor statement; useful for reconciling open AP later. |
+| `statement` | none directly; rows may **backfill bills** (exception `statement_backfill`) | Vendor statement with open invoices; extracted row by row (§6.3b). Staff bracket months by hand and pay a month per check. |
 | `delivery_slip` | none (record) | No prices. |
 | `note` | none (record) | Free text from uploader, e.g. "paid Frito driver $180 cash". Structured fields optional. Creates an exception for the owner if it mentions money. |
 | `other` | none | Not a financial document; kept for audit, hidden from lists by default. |
@@ -262,6 +262,8 @@ Single function `extract(pages[], hint)` where `hint ∈ {invoice, check, credit
   "confidence": 0.0
 }
 ```
+`also_contains` lists other kinds physically in the same photo (the store lays the check on the invoice it pays). One `documents` row per kind, all sharing the same `pages` rows; each gets its own confirm card, and the check card is pre-ticked with the invoice from the same photo.
+
 Rules: if `hint` and `doc_type` disagree with confidence ≥ 0.8, use the model's type and tell the uploader ("This looks like a credit memo, not an invoice — correct?"). `documents_in_image > 1` is only valid for `check`; the system then splits into N documents sharing the same page.
 
 ### 6.2 Invoice / credit memo payload
@@ -280,11 +282,20 @@ Rules: if `hint` and `doc_type` disagree with confidence ≥ 0.8, use the model'
   "is_credit": false,
   "paid_stamp_or_cod": {"value": false, "confidence": 0.8},
   "check_number_referenced": {"value": null, "confidence": 0.0},
+  "paid_date_referenced": {"value": null, "confidence": 0.0},
+  "handwritten_adjusted_total": {"value": null, "confidence": 0.0},
+  "handwritten_notes": [],
   "page_count_seen": 2,
   "issues": ["subtotal+tax != total by 0.00"]
 }
 ```
 Rules: dates ISO-8601; amounts as numbers, never strings; credits are stored as positive amounts with `kind='credit'` (the sign lives in the kind, never in `total`); `null` with confidence 0 when absent; `issues` is free text for anything the model could not reconcile. Post-processing (not the model) checks `subtotal + tax == total` within $0.02, negative totals → `is_credit=true`, and page-count vs pages uploaded.
+
+**Handwritten adjusted total.** Staff cross out the printed total after returns and write the real amount owed (confirmed against the vendor's statement in the fixture set). `bills.total` = adjusted figure when present with confidence ≥ 0.85; below that the confirm card shows both and the uploader picks. `bills.printed_total` (migration 0002) keeps the printed figure.
+
+### 6.3b Statement payload
+
+See `StatementPayloadSchema` in `src/lib/contracts/extraction.ts`: vendor, statement date, one row per printed line (`invoice|credit|payment`, ref, amount, due), `total_balance`, `handwritten_groups` (month brackets with their handwritten sums), `handwritten_notes`. On confirm: rows whose `(vendor, ref_number)` are unknown create bills in `needs_attention` with reason `statement_backfill` (owner accepts without a photo); known rows reconcile open balances and raise `amount_mismatch` if they differ. A handwritten group offers "ask to pay this group" (ADR 0005).
 
 ### 6.3 Check payload (array, one per check found)
 
@@ -344,7 +355,7 @@ received ──(pages stored)──► extracting ──► extracted ──► 
 void: reachable from any state except pushed (owner only). Pushed docs are corrected in QB, never here.
 ```
 
-Exception reason codes: `extraction_failed`, `low_confidence`, `new_vendor`, `duplicate_suspected`, `amount_mismatch` (check ≠ sum of applications), `unapplied_payment` (check with no bills ticked), `multi_vendor_check`, `type_conflict`, `qb_error`, `money_note` (a note mentioning an amount), `over_applied` (application > bill open balance).
+Exception reason codes: `statement_backfill` (bill created from a statement row, no photo), `extraction_failed`, `low_confidence`, `new_vendor`, `duplicate_suspected`, `amount_mismatch` (check ≠ sum of applications), `unapplied_payment` (check with no bills ticked), `multi_vendor_check`, `type_conflict`, `qb_error`, `money_note` (a note mentioning an amount), `over_applied` (application > bill open balance).
 
 Validation on confirm: required fields present; check applications sum exactly to amount (or the uploader explicitly chose "leave $X unapplied"); every application ≤ bill open balance; payee vendor == every applied bill's vendor.
 
@@ -443,10 +454,14 @@ V2 candidates (not scheduled): `bill_lines` inventory capture from well-formatte
 
 ---
 
+## 14b. Migration 0002 (to write in Phase 1, after findings)
+
+`bills.printed_total numeric(12,2)`; `settings.default_expense_account_id_services`; add `statement_backfill` to the `exceptions.reason` check constraint; `statements` table (document_id, vendor_id, statement_date, total_balance) and `statement_rows` (statement_id, kind, ref_number, amount, txn_date, due_date, bill_id nullable). See `docs/FINDINGS-real-paper.md`.
+
 ## 15. Assumptions and open items
 
 - QuickBooks Desktop, separate company file, Web Connector on an always-on Windows machine; the Timesheet App's qbXML service will be given a second connector config pointing at this file.
-- One COGS expense account for all bills in MVP (`settings.default_cogs_account_id`); one checking account for all checks.
+- One COGS expense account for grocery vendors in MVP (`settings.default_cogs_account_id`) plus `settings.default_expense_account_id_services` for non-stock vendors (repairs, services); the new-vendor approval step asks the owner which applies, stored on `vendors.default_expense_account_id`. One checking account for all checks.
 - Bills + payments (accrual AP) is the bookkeeping model; the owner will confirm with their tax preparer.
 - Non-check payments (ACH, card, autopay) are handled in QB bank reconciliation, not captured.
 - Staff use iPhones; Safari PWA capabilities (camera capture, home-screen install, Web Push) are sufficient.

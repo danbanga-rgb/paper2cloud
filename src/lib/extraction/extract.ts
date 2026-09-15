@@ -9,6 +9,7 @@ import {
   CONFIDENCE,
   InvoicePayloadSchema,
   RecordOnlyPayloadSchema,
+  StatementPayloadSchema,
   overallConfidence,
   type Classification,
   type DocType,
@@ -44,6 +45,11 @@ export interface ExtractionResult {
   /** true when the model overrode the uploader's hint (show the “this looks like a …” prompt) */
   typeConflict: boolean;
   payload: unknown; // validated against payloadSchemaFor(resolvedDocType)
+  /**
+   * Extra documents found in the same photo (e.g. the check laid on top of the invoice). The caller
+   * creates one `documents` row per entry, sharing the same pages, each with its own confirm card.
+   */
+  companions: { docType: DocType; payload: unknown; overallConfidence: number }[];
   overallConfidence: number;
   issues: string[];
   model: string;
@@ -57,6 +63,7 @@ export interface Prompts {
   classify: string;
   invoice: string;
   check: string;
+  statement: string;
   recordOnly: string;
 }
 
@@ -107,7 +114,9 @@ export async function extractDocument(
       ? prompts.invoice
       : resolvedDocType === "check"
         ? prompts.check
-        : prompts.recordOnly;
+        : resolvedDocType === "statement"
+          ? prompts.statement
+          : prompts.recordOnly;
   const e = await provider.call({ system, user: `Document type: ${resolvedDocType}.`, images, jsonSchema: {} });
   latencyMs += e.latencyMs;
   costUsd += e.costUsd ?? 0;
@@ -143,8 +152,22 @@ export async function extractDocument(
       issues.push(`classifier counted ${classification.documents_in_image} checks, extractor returned ${checks.length}`);
     }
     payload = checks;
+  } else if (resolvedDocType === "statement") {
+    payload = StatementPayloadSchema.parse(raw);
   } else {
     payload = RecordOnlyPayloadSchema.parse(raw);
+  }
+
+  // Pass 3+ — companions physically present in the same photo (check on top of invoice, etc.)
+  const companions: ExtractionResult["companions"] = [];
+  for (const kind of classification.also_contains) {
+    if (kind === resolvedDocType) continue;
+    const sys = kind === "check" ? prompts.check : kind === "invoice" || kind === "credit_memo" ? prompts.invoice : kind === "statement" ? prompts.statement : prompts.recordOnly;
+    const r = await provider.call({ system: sys, user: `Document type: ${kind}. Extract ONLY the ${kind} in this photo; ignore the other paper.`, images, jsonSchema: {} });
+    latencyMs += r.latencyMs;
+    costUsd += r.costUsd ?? 0;
+    const parsed = kind === "check" ? ChecksPayloadSchema.parse(JSON.parse(r.text)) : kind === "invoice" || kind === "credit_memo" ? InvoicePayloadSchema.parse(JSON.parse(r.text)) : RecordOnlyPayloadSchema.parse(JSON.parse(r.text));
+    companions.push({ docType: kind, payload: parsed, overallConfidence: overallConfidence(kind, parsed) });
   }
 
   return {
@@ -152,6 +175,7 @@ export async function extractDocument(
     resolvedDocType,
     typeConflict,
     payload,
+    companions,
     overallConfidence: overallConfidence(resolvedDocType, payload),
     issues,
     model,

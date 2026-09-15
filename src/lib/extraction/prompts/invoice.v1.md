@@ -15,6 +15,9 @@ You are reading a vendor invoice (or credit memo) delivered to a grocery store. 
   "is_credit": boolean,
   "paid_stamp_or_cod": {"value": boolean|null, "confidence": number},
   "check_number_referenced": {"value": string|null, "confidence": number},
+  "paid_date_referenced": {"value": "YYYY-MM-DD"|null, "confidence": number},
+  "handwritten_adjusted_total": {"value": number|null, "confidence": number},
+  "handwritten_notes": [string],
   "page_count_seen": integer,
   "issues": [string]
 }
@@ -27,7 +30,10 @@ Rules:
 - subtotal and tax: as printed; null if not shown. Do not compute them.
 - is_credit: true for credit memos, returns, or when the total is negative. Report the total as a positive number and set is_credit true.
 - paid_stamp_or_cod: true when the paper is marked PAID, COD, CASH, or shows a check number written on it.
-- check_number_referenced: a check number handwritten or stamped on the invoice, if any.
+- check_number_referenced / paid_date_referenced: staff often write "paid", the check number ("ck#6514") and a date on the invoice when they pay it. Report them here.
+- handwritten_adjusted_total: staff sometimes cross out the printed total and write the amount actually owed after a return or shortage, often with the subtraction shown ("750.04 − 60.52 = 689.52"). Report that final handwritten figure here and leave `total` as printed. If nothing is crossed out or adjusted, null with confidence 0. Never invent an adjustment from a tally that lists other vendors.
+- handwritten_notes: transcribe each handwritten note briefly, in order: returns ("I return drumsticks 1 box"), payment notes, per-line unit prices written beside items, and any tally of amounts (with the vendor names as written). Do not put the invoice's own printed fields here.
+- If a check is lying on top of this invoice, IGNORE the check entirely; it is extracted separately. Do not read the check's amount as the invoice total.
 - page_count_seen: how many distinct pages you were shown.
 - issues: short notes about anything you could not reconcile (e.g. "subtotal+tax != total", "total cut off at bottom", "two different dates on page").
 - Do NOT extract line items.

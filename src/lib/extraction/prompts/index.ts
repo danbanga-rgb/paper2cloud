@@ -13,6 +13,7 @@ export function loadPrompts(version: string, dir = __dirname): Prompts {
     classify: read("classify"),
     invoice: read("invoice"),
     check: read("check"),
+    statement: read("statement"),
     recordOnly: read("record-only"),
   };
 }
