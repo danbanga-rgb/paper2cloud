@@ -1,0 +1,8 @@
+{
+  "op": "BillAdd",
+  "VendorRef": { "ListID": "80000012-1234567890" },
+  "TxnDate": "2026-09-10",
+  "RefNumber": "22910",
+  "Memo": "PaperFlow doc-aaaa · Maria",
+  "ExpenseLineAdd": [ { "AccountRef": { "ListID": "COGS-LISTID" }, "Amount": "800.00" } ]
+}

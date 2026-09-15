@@ -1,0 +1,13 @@
+{
+  "op": "BillPaymentCheckAdd",
+  "PayeeEntityRef": { "ListID": "80000012-1234567890" },
+  "TxnDate": "2026-09-12",
+  "BankAccountRef": { "ListID": "CHK-LISTID" },
+  "IsToBePrinted": false,
+  "RefNumber": "1047",
+  "Memo": "PaperFlow doc-chec · Maria · inv 22910, 22987",
+  "AppliedToTxnAdd": [
+    { "TxnID": "TXN-B1", "PaymentAmount": "764.50", "SetCredit": [ { "CreditTxnID": "TXN-C1", "AppliedAmount": "35.50" } ] },
+    { "TxnID": "pending:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "PaymentAmount": "500.00" }
+  ]
+}

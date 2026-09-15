@@ -1,0 +1,7 @@
+node_modules/
+.next/
+.env*.local
+fixtures/images/*
+!fixtures/images/.gitkeep
+*.tsbuildinfo
+.DS_Store

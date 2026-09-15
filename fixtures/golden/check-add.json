@@ -1,0 +1,10 @@
+{
+  "op": "CheckAdd",
+  "AccountRef": { "ListID": "CHK-LISTID" },
+  "PayeeEntityRef": { "ListID": "80000012-1234567890" },
+  "RefNumber": "1047",
+  "TxnDate": "2026-09-12",
+  "Memo": "PaperFlow doc-chec · Maria · inv 22910, 22987",
+  "IsToBePrinted": false,
+  "ExpenseLineAdd": [ { "AccountRef": { "ListID": "COGS-LISTID" }, "Amount": "1264.50" } ]
+}

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PaperFlow — clickable prototype</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#fff; --ink:#1c1c1a; --muted:#6b6b66; --line:#e4e1d9;
+    --green:#1f5f4a; --green-soft:#dcebe3; --amber:#b7791f; --amber-soft:#fbf1dc;
+    --red:#a63d2f; --red-soft:#f8e3df; --blue:#2f5d8a; --blue-soft:#e1ebf5; --radius:14px;
+  }
+  *{box-sizing:border-box} html,body{margin:0;height:100%}
+  body{background:#d9d6ce;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  /* phone frame on desktop, full-bleed on phones */
+  #frame{width:100%;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative}
+  @media(min-width:520px){
+    body{display:flex;align-items:flex-start;justify-content:center;padding:24px;gap:24px}
+    #frame{width:390px;min-height:780px;max-height:calc(100vh - 48px);border-radius:40px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;border:10px solid #111}
+    #frame.owner{width:900px}
+    #side{width:280px;font-size:13px;color:#333;line-height:1.45}
+    #side h3{margin:0 0 6px;font-size:14px} #side a{color:var(--blue);display:block;margin:2px 0}
+  }
+  @media(max-width:519px){#side{display:none}}
+  header.bar{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;background:var(--bg);position:sticky;top:0;z-index:5}
+  header.bar h1{font-size:18px;margin:0;flex:1;font-weight:650}
+  .back{border:0;background:none;font-size:16px;color:var(--green);padding:4px 8px 4px 0;cursor:pointer}
+  main{flex:1;overflow:auto;padding:0 16px 96px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin:10px 0}
+  .big{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:112px;border-radius:var(--radius);border:0;font-size:18px;font-weight:650;color:#fff;background:var(--green);cursor:pointer;width:100%}
+  .big small{font-weight:400;font-size:12px;opacity:.85}
+  .big.alt{background:#2f5d8a} .big.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px}
+  .row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+  .row:first-child{border-top:0}
+  .thumb{width:44px;height:56px;border-radius:6px;background:#e9e6de;flex:none;object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888}
+  .grow{flex:1;min-width:0} .t{font-weight:600} .s{font-size:12px;color:var(--muted)}
+  .chip{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--green-soft);color:var(--green);font-weight:600;white-space:nowrap}
+  .chip.amber{background:var(--amber-soft);color:var(--amber)} .chip.red{background:var(--red-soft);color:var(--red)} .chip.blue{background:var(--blue-soft);color:var(--blue)} .chip.grey{background:#eee;color:#555}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:18px 0 6px}
+  .field{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-top:1px solid var(--line)}
+  .field:first-child{border-top:0}
+  .field label{font-size:12px;color:var(--muted)}
+  .field .v{display:flex;align-items:center;gap:8px}
+  .field input,.field select,textarea{font:inherit;font-size:17px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;width:100%;background:#fff}
+  .field.hl input{border-color:var(--amber);background:var(--amber-soft)}
+  .field.req input{border-color:var(--red);background:var(--red-soft)}
+  .hint{font-size:11px;color:var(--amber);font-weight:600} .hint.red{color:var(--red)}
+  .money{font-variant-numeric:tabular-nums}
+  .footer{position:absolute;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 30%);display:flex;gap:10px;z-index:6}
+  .btn{flex:1;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:650;cursor:pointer;background:var(--green);color:#fff}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)} .btn.danger{background:#fff;color:var(--red);border:1px solid var(--line)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .banner{border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0}
+  .banner.amber{background:var(--amber-soft);color:#6f4a0f} .banner.red{background:var(--red-soft);color:var(--red)} .banner.blue{background:var(--blue-soft);color:var(--blue)} .banner.green{background:var(--green-soft);color:var(--green)}
+  .banner button{margin-left:8px;border:0;background:#fff;border-radius:8px;padding:4px 8px;font-weight:600;cursor:pointer}
+  .strip{display:flex;gap:8px;overflow-x:auto;padding:8px 0}
+  .strip .thumb{width:64px;height:84px}
+  .strip .thumb.add{border:1px dashed #aaa;background:#fff;color:#666;font-size:22px}
+  .viewfinder{height:300px;border-radius:var(--radius);background:#222 radial-gradient(circle at 50% 45%,#444,#111);display:flex;align-items:center;justify-content:center;color:#bbb;font-size:13px;position:relative;overflow:hidden}
+  .viewfinder .paper{width:60%;height:78%;background:#f3f0e8;border-radius:3px;box-shadow:0 6px 20px rgba(0,0,0,.5);padding:14px;font-size:9px;color:#333;line-height:1.5}
+  .shutter{width:64px;height:64px;border-radius:50%;background:#fff;border:5px solid #ccc;margin:12px auto 0;display:block;cursor:pointer}
+  .skeleton{height:14px;border-radius:6px;background:linear-gradient(90deg,#eee,#f7f7f7,#eee);background-size:200% 100%;animation:sh 1.2s infinite;margin:10px 0}
+  @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .check{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .check input[type=checkbox]{width:22px;height:22px}
+  .check .amt{font-weight:600} .check .amt input{width:96px;font-size:15px;padding:4px 6px;text-align:right}
+  .total{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:650;margin-top:8px;box-shadow:0 -6px 16px rgba(0,0,0,.06)}
+  .total.ok{background:var(--green-soft);color:var(--green)} .total.bad{background:var(--amber-soft);color:#6f4a0f}
+  .stepper{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+  .stepper span{width:8px;height:8px;border-radius:50%;background:#ccc} .stepper span.on{background:var(--green)}
+  .sheet{position:absolute;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;z-index:20}
+  .sheet.open{display:flex}
+  .sheet .panel{background:#fff;width:100%;border-radius:18px 18px 0 0;padding:16px;max-height:80%;overflow:auto}
+  .sheet .panel input{width:100%;font-size:17px;padding:10px;border:1px solid var(--line);border-radius:10px}
+  .sheet .opt{padding:12px 4px;border-top:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between}
+  nav.tabs{position:absolute;left:0;right:0;bottom:0;display:flex;background:#fff;border-top:1px solid var(--line);padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:6}
+  nav.tabs a{flex:1;text-align:center;font-size:11px;color:var(--muted);text-decoration:none;position:relative}
+  nav.tabs a.on{color:var(--green);font-weight:650}
+  nav.tabs .badge{position:absolute;top:-6px;margin-left:4px;background:var(--red);color:#fff;border-radius:999px;font-size:10px;padding:1px 6px}
+  .toast{position:absolute;left:16px;right:16px;bottom:90px;background:#1c1c1a;color:#fff;padding:12px 14px;border-radius:12px;font-size:14px;z-index:30;display:none}
+  .toast.show{display:block}
+  /* owner */
+  .owner main{padding:0 24px 24px}
+  .owner .topnav{display:flex;gap:4px;padding:12px 24px;border-bottom:1px solid var(--line);background:#fff;align-items:center}
+  .owner .topnav a{padding:8px 12px;border-radius:8px;text-decoration:none;color:var(--ink);font-size:14px}
+  .owner .topnav a.on{background:var(--green-soft);color:var(--green);font-weight:650}
+  table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  th,td{padding:10px 12px;text-align:left;border-top:1px solid var(--line);vertical-align:top}
+  th{background:#faf9f6;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-top:0}
+  td.r,th.r{text-align:right;white-space:nowrap}
+  td.acts{text-align:right;white-space:nowrap;width:1%}
+  .act{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;margin:2px 2px 2px 0}
+  .act.p{background:var(--green);color:#fff;border-color:var(--green)}
+  .modeswitch{position:fixed;top:10px;right:10px;z-index:50;font-size:12px}
+  @media(max-width:519px){header.bar{padding-right:110px} .owner .topnav{padding-right:110px}}
+  .modeswitch button{border:1px solid #999;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer}
+  details summary{cursor:pointer}
+</style>
+</head>
+<body>
+<div id="side">
+  <h3>PaperFlow prototype</h3>
+  Clickable, mocked data, no backend. Open on an iPhone: the Invoice/Check buttons use the real camera.
+  <h3 style="margin-top:14px">Uploader flows</h3>
+  <a href="#s1">S1 Home</a><a href="#s2">S2 Capture invoice</a><a href="#s3">S3 Capture check</a><a href="#s5">S5 Confirm invoice</a><a href="#s5dup">S5 Duplicate block</a><a href="#s5type">S5 Type conflict</a><a href="#s6">S6/S7 Confirm check + apply</a><a href="#s8">S8 Note</a><a href="#s9">S9 History</a>
+  <h3 style="margin-top:14px">Owner</h3>
+  <a href="#s10">S10 Needs attention</a><a href="#s11">S11 Bills</a><a href="#s12">S12 Open AP</a>
+  <h3 style="margin-top:14px">Try this</h3>
+  Capture an invoice for Pepsi, confirm it, then capture a check: the new invoice is pre-ticked (15-minute rule). Tick/untick until the total goes green.
+</div>
+<div class="modeswitch"><button onclick="toggleOwner()">Switch to owner view</button></div>
+<div id="frame"></div>
+<script>
+// ---------- mock data ----------
+const VENDORS = ["Pepsi Bottling","Sysco","Frito-Lay","Coca-Cola","Bimbo Bakeries","Mission Produce","Alpine Dairy"];
+const state = {
+  owner:false,
+  pages:[],                 // capture strip
+  captureKind:"invoice",
+  bills:[
+    {id:"b1",vendor:"Pepsi Bottling",ref:"22910",date:"Sep 10",open:80000,kind:"bill",status:"Confirmed"},
+    {id:"b2",vendor:"Pepsi Bottling",ref:"22987",date:"Sep 11",open:50000,kind:"bill",status:"In QuickBooks"},
+    {id:"c1",vendor:"Pepsi Bottling",ref:"CM-771",date:"Sep 11",open:3550,kind:"credit",status:"In QuickBooks"},
+    {id:"b3",vendor:"Sysco",ref:"48812",date:"Sep 12",open:84210,kind:"bill",status:"Waiting for you"},
+    {id:"b4",vendor:"Frito-Lay",ref:"7731902",date:"Sep 8",open:21240,kind:"bill",status:"In QuickBooks"},
+  ],
+  recentInvoiceByUser:[],   // ids captured in the last 15 min (for pre-tick)
+  history:[
+    {t:"Sysco · #48812 · $842.10",s:"Waiting for you",cls:"amber",when:"3:41 PM"},
+    {t:"Pepsi Bottling · check #1046 · $500.00",s:"In QuickBooks",cls:"",when:"Yesterday"},
+    {t:"Frito-Lay · #7731902 · $212.40",s:"In QuickBooks",cls:"",when:"Sep 8"},
+  ],
+  checks:[
+    {n:"1047",payee:"Pepsi Bottling",amt:126450,amtConf:.9,written:"One thousand two hundred sixty-four and 50/100",date:"2026-09-12",memo:"inv 22910, 22987",memoNums:["22910","22987"]},
+    {n:"1048",payee:"Sysco",amt:84210,amtConf:.45,written:"Eight hundred forty-two and 10/100",date:"2026-09-12",memo:"",memoNums:[]},
+  ],
+  checkIdx:0, applied:{}, leaveUnapplied:false,
+};
+const $ = s=>document.querySelector(s);
+const usd = c => (c<0?"-":"")+"$"+Math.floor(Math.abs(c)/100).toLocaleString()+"."+String(Math.abs(c)%100).padStart(2,"0");
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1800)}
+function toggleOwner(){state.owner=!state.owner;location.hash=state.owner?"#s10":"#s1";render()}
+
+// ---------- router ----------
+window.addEventListener("hashchange",render);
+function render(){
+  const h=(location.hash||"#s1").slice(1);
+  const f=$("#frame"); f.className=state.owner?"owner":"";
+  document.querySelector(".modeswitch button").textContent=state.owner?"Phone view":"Owner view";
+  const screens={s1,s2,s3,s3b,s4,s5,s5dup,s5type,s6,s8,s9,s10,s11,s12};
+  const fn=screens[h]||(state.owner?s10:s1);
+  f.innerHTML=fn()+`<div class="toast" id="toast"></div>`;
+  f.querySelectorAll("[data-go]").forEach(el=>el.addEventListener("click",()=>{location.hash=el.dataset.go}));
+  if(h==="s4") setTimeout(()=>{location.hash=state.captureKind==="check"?"#s6":"#s5"},1800);
+  if(h==="s6") wireApply();
+}
+const bar=(title,back)=>`<header class="bar">${back?`<button class="back" data-go="${back}">‹ Back</button>`:""}<h1>${title}</h1></header>`;
+const tabs=(on)=>`<nav class="tabs"><a href="#s1" class="${on==="home"?"on":""}">Home${state.bills.some(b=>b.status==="Waiting for you")?'<span class="badge">1</span>':""}</a><a href="#s9" class="${on==="hist"?"on":""}">History</a></nav>`;
+
+// ---------- S1 Home ----------
+function s1(){
+  const waiting=state.bills.filter(b=>b.status==="Waiting for you");
+  return bar("PaperFlow")+`<main>
+    <div class="grid3">
+      <button class="big" onclick="startCapture('invoice')">🧾<span>Invoice</span><small>one or more pages</small></button>
+      <button class="big alt" onclick="startCapture('check')">✍️<span>Check</span><small>several per photo ok</small></button>
+      <button class="big ghost" data-go="s3b">📎<span>Other</span><small>statement · slip · note</small></button>
+    </div>
+    <div class="banner blue" style="display:none" id="offline">2 photos waiting for signal — they'll send automatically.</div>
+    <h2>Waiting for you</h2>
+    <div class="card">${waiting.length?waiting.map(b=>`<div class="row" data-go="s5"><div class="thumb">inv</div><div class="grow"><div class="t">${b.vendor} · #${b.ref}</div><div class="s">Read at 3:41 PM · tap to confirm</div></div><span class="chip amber">Confirm</span></div>`).join(""):`<div class="s">Nothing waiting. Nice.</div>`}</div>
+    <h2>Today</h2>
+    <div class="card">
+      <div class="row"><div class="thumb">chk</div><div class="grow"><div class="t">Pepsi Bottling · check #1046</div><div class="s">$500.00 · applied to #22987</div></div><span class="chip">In QuickBooks</span></div>
+      <div class="row"><div class="thumb">inv</div><div class="grow"><div class="t">Bimbo Bakeries · #B-90211</div><div class="s">$96.40 · new vendor</div></div><span class="chip blue">Needs owner</span></div>
+      <div class="row"><div class="thumb">inv</div><div class="grow"><div class="t">Reading…</div><div class="s">Mission Produce · 2 pages</div></div><span class="chip grey">Reading</span></div>
+    </div>
+  </main>`+tabs("home");
+}
+function startCapture(kind){state.captureKind=kind;state.pages=[];location.hash=kind==="check"?"#s3":"#s2"}
+
+// ---------- S2/S3 Capture ----------
+function captureScreen(kind){
+  const isCheck=kind==="check";
+  return bar(isCheck?"Check":"Invoice","s1")+`<main>
+    <div class="viewfinder"><div class="paper">${isCheck?`<b>Pay to the order of</b> Pepsi Bottling<br><b>$</b> 1,264.50<br>One thousand two hundred sixty-four and 50/100<br><b>Memo</b> inv 22910, 22987<br><br><i>#1047</i>`:`<b>SYSCO SAN FRANCISCO</b><br>Invoice 48812 · 09/12/26<br>Ship to: Dan's Market<br>…<br>Subtotal 812.10<br>Tax 30.00<br><b>TOTAL 842.10</b>`}</div></div>
+    <input type="file" accept="image/*" capture="environment" id="cam" style="display:none" onchange="gotPhoto(this)">
+    <button class="shutter" onclick="snap()" aria-label="Take photo"></button>
+    <div class="s" style="text-align:center;margin-top:6px">${isCheck?"One photo can include several checks.":"Take one photo per page."} <a href="#" onclick="event.preventDefault();$('#cam').removeAttribute('capture');$('#cam').click()">Choose from photos</a></div>
+    <div class="strip" id="strip">${state.pages.map((p,i)=>`<div class="thumb" style="${p.src?`background:url(${p.src}) center/cover`:""}" onclick="retake(${i})">${p.src?"":`Page ${i+1}`}</div>`).join("")}<div class="thumb add" onclick="snap()">+</div></div>
+  </main>
+  <div class="footer"><button class="btn ghost" data-go="s1">Cancel</button><button class="btn" ${state.pages.length?"":"disabled"} data-go="s4">Done${state.pages.length?` (${state.pages.length})`:""}</button></div>`;
+}
+const s2=()=>captureScreen("invoice"), s3=()=>captureScreen("check");
+function snap(){ if(/iPhone|iPad|Android/i.test(navigator.userAgent)){$("#cam").setAttribute("capture","environment");$("#cam").click()} else {state.pages.push({});render();toast("Simulated photo (real camera on a phone)")} }
+function gotPhoto(inp){const f=inp.files&&inp.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{state.pages.push({src:e.target.result});render()}; r.readAsDataURL(f)}
+function retake(i){ if(confirm("Remove this page?")){state.pages.splice(i,1);render()} }
+function s3b(){return bar("Other","s1")+`<main>
+  <div class="card"><div class="row" data-go="s2"><div class="grow"><div class="t">Vendor statement</div><div class="s">Kept for records; not entered in QuickBooks</div></div>›</div>
+  <div class="row" data-go="s2"><div class="grow"><div class="t">Delivery slip</div><div class="s">No prices — kept for records</div></div>›</div>
+  <div class="row" data-go="s8"><div class="grow"><div class="t">Note</div><div class="s">"Paid the Frito driver $180 cash"</div></div>›</div></div></main>`+tabs("home")}
+
+// ---------- S4 Processing ----------
+function s4(){return bar("Reading…")+`<main><div class="card"><div class="row"><div class="thumb">${state.pages.length} pg</div><div class="grow"><div class="t">Reading the ${state.captureKind}…</div><div class="s">Usually 5–10 seconds. You can leave — we'll ping you.</div></div></div>
+<div class="skeleton" style="width:60%"></div><div class="skeleton" style="width:40%"></div><div class="skeleton" style="width:75%"></div><div class="skeleton" style="width:30%"></div></div></main>`}
+
+// ---------- S5 Confirm invoice ----------
+function field(label,val,conf,opts={}){
+  const cls=conf<.5?"req":conf<.85?"hl":"";
+  const hint=conf<.5?`<span class="hint red">couldn't read — please type it</span>`:conf<.85?`<span class="hint">check this</span>`:"";
+  return `<div class="field ${cls}"><label>${label} ${hint}</label><div class="v"><input value="${val??""}" ${opts.type?`type="${opts.type}"`:""} ${opts.onclick?`readonly onclick="${opts.onclick}"`:""}>${opts.after||""}</div></div>`;
+}
+function s5(variant){
+  const dup=variant==="dup", typeC=variant==="type";
+  return bar("Confirm invoice","s1")+`<main>
+    <div class="strip">${(state.pages.length?state.pages:[{},{}]).map((p,i)=>`<div class="thumb" style="${p.src?`background:url(${p.src}) center/cover`:""}">${p.src?"":`Page ${i+1}`}</div>`).join("")}</div>
+    ${typeC?`<div class="banner amber">This looks like a <b>credit memo</b>, not an invoice. <button onclick="toast('Switched to credit memo')">Switch</button><button onclick="toast('Kept as invoice')">Keep</button></div>`:""}
+    ${dup?`<div class="banner red"><b>Already captured</b> on Sep 10 by Maria as Sysco #48812. <button data-go="s9">View</button></div>`:""}
+    <div class="card">
+      ${field("Vendor","Sysco",.97,{onclick:"openVendors()",after:`<span class="chip">matched</span>`})}
+      ${field("Invoice #","48812",.95)}
+      ${field("Date","2026-09-12",.9,{type:"date"})}
+      ${field("Total","842.10",.98,{type:"number"})}
+      <div class="field"><label>Credit memo?</label><div class="v"><input type="checkbox" style="width:22px;height:22px"> <span class="s">Tick for returns / credits</span></div></div>
+      <details class="s" style="padding:8px 0"><summary>More (subtotal, tax, terms)</summary>
+        ${field("Subtotal","812.10",.9)}${field("Tax","30.00",.9)}${field("Terms","NET 14",.7)}
+      </details>
+    </div>
+    <div class="s">Confirming creates a bill for <b>Sysco</b> in QuickBooks once approved. Booked to Cost of Goods Sold.</div>
+  </main>
+  <div class="footer">${dup?`<button class="btn danger" data-go="s1">Discard duplicate</button><button class="btn ghost" onclick="toast('Owner will decide')">Not a duplicate</button>`:`<button class="btn ghost" onclick="flag()">Flag for owner</button><button class="btn" onclick="confirmInvoice()">Confirm</button>`}</div>
+  ${vendorSheet()}`;
+}
+const s5dup=()=>s5("dup"), s5type=()=>s5("type");
+function confirmInvoice(){
+  const b=state.bills.find(x=>x.id==="b3"); if(b) b.status="Confirmed";
+  state.recentInvoiceByUser.push("b3");
+  state.history.unshift({t:"Sysco · #48812 · $842.10",s:"Confirmed",cls:"",when:"now"});
+  toast("Confirmed · Sysco #48812 · $842.10"); setTimeout(()=>location.hash="#s1",900);
+}
+function flag(){const r=prompt("One line for the owner:","total looks wrong"); if(r!==null){toast("Flagged for owner");setTimeout(()=>location.hash="#s1",800)}}
+function vendorSheet(){return `<div class="sheet" id="vsheet" onclick="if(event.target===this)this.classList.remove('open')"><div class="panel">
+  <input placeholder="Search vendors" oninput="filterV(this.value)"><div id="vlist">${VENDORS.map(v=>`<div class="opt" onclick="pickV('${v}')">${v}</div>`).join("")}<div class="opt" onclick="newV()"><b>+ New vendor…</b><span class="s">owner approves</span></div></div></div></div>`}
+function openVendors(){$("#vsheet").classList.add("open")}
+function filterV(q){$("#vlist").querySelectorAll(".opt").forEach(o=>o.style.display=o.textContent.toLowerCase().includes(q.toLowerCase())||o.textContent.includes("New vendor")?"":"none")}
+function pickV(v){$("#vsheet").classList.remove("open");toast("Vendor: "+v+" (alias learned)")}
+function newV(){const n=prompt("New vendor name (as it should appear in QuickBooks)");if(n){$("#vsheet").classList.remove("open");toast("New vendor pending owner approval")}}
+
+// ---------- S6/S7 Confirm check + apply ----------
+function s6(){
+  const c=state.checks[state.checkIdx]; const n=state.checks.length;
+  const open=state.bills.filter(b=>b.vendor===c.payee&&b.open>0&&b.status!=="Waiting for you");
+  const pre=(id)=>{const b=state.bills.find(x=>x.id===id); return c.memoNums.includes(b.ref)||state.recentInvoiceByUser.includes(id)};
+  if(!state.applied[c.n]){state.applied[c.n]={}; open.forEach(b=>{if(pre(b.id)) state.applied[c.n][b.id]=b.open})}
+  const ap=state.applied[c.n];
+  return bar("Confirm check","s1")+`<main>
+    ${n>1?`<div class="stepper">${state.checks.map((_,i)=>`<span class="${i===state.checkIdx?"on":""}"></span>`).join("")} Check ${state.checkIdx+1} of ${n} found in this photo</div>`:""}
+    <div class="card">
+      ${field("Check #",c.n,.93)}
+      ${field("Payee",c.payee,.85,{onclick:"openVendors()",after:`<span class="chip">matched</span>`})}
+      ${field("Amount",(c.amt/100).toFixed(2),c.amtConf,{type:"number"})}
+      ${c.amtConf<.85?`<div class="s" style="padding:0 0 8px">Words say “${c.written}” — numbers and words disagree, so please confirm.</div>`:""}
+      ${field("Date",c.date,.9,{type:"date"})}
+      ${field("Memo",c.memo,.7)}
+    </div>
+    <h2>Which invoices does this pay?</h2>
+    <div class="card" id="apply">
+      ${open.filter(b=>b.kind==="bill").map(b=>`<label class="check"><input type="checkbox" data-id="${b.id}" ${ap[b.id]?"checked":""}><div class="grow"><div class="t">#${b.ref} <span class="s">${b.date}</span> ${pre(b.id)?`<span class="chip blue">${c.memoNums.includes(b.ref)?"on memo":"just captured"}</span>`:""}</div><div class="s">open ${usd(b.open)}</div></div><div class="amt money"><input type="number" step="0.01" data-amt="${b.id}" value="${((ap[b.id]??b.open)/100).toFixed(2)}" ${ap[b.id]?"":"disabled"}></div></label>`).join("")||`<div class="s">No open invoices for ${c.payee}.</div>`}
+      ${open.some(b=>b.kind==="credit")?`<h2 style="margin-top:8px">Credits to apply</h2>${open.filter(b=>b.kind==="credit").map(b=>`<label class="check"><input type="checkbox" data-id="${b.id}" data-credit="1" ${ap[b.id]?"checked":""}><div class="grow"><div class="t">${b.ref} <span class="chip grey">credit</span></div><div class="s">−${usd(b.open)}</div></div><div class="amt money"><input type="number" step="0.01" data-amt="${b.id}" value="${((ap[b.id]??b.open)/100).toFixed(2)}" ${ap[b.id]?"":"disabled"}></div></label>`).join("")}`:""}
+      <div class="row" style="justify-content:space-between;font-size:14px"><a href="#" onclick="event.preventDefault();state.captureKind='invoice';state.pages=[];location.hash='#s2'">Invoice not here — capture it now</a><a href="#" onclick="event.preventDefault();leaveUnapplied()">Leave rest unapplied</a></div>
+    </div>
+    <div class="total" id="total"></div>
+  </main>
+  <div class="footer"><button class="btn ghost" onclick="flag()">Flag for owner</button><button class="btn" id="cbtn" onclick="confirmCheck()">Confirm</button></div>
+  ${vendorSheet()}`;
+}
+function wireApply(){
+  const c=state.checks[state.checkIdx]; const ap=state.applied[c.n];
+  const recompute=()=>{
+    let bills=0,credits=0;
+    document.querySelectorAll("#apply input[type=checkbox]").forEach(cb=>{
+      const id=cb.dataset.id, amtEl=document.querySelector(`[data-amt="${id}"]`);
+      amtEl.disabled=!cb.checked;
+      if(cb.checked){const v=Math.round(Number(amtEl.value)*100); ap[id]=v; if(cb.dataset.credit) credits+=v; else bills+=v;} else delete ap[id];
+    });
+    const net=bills-credits, diff=c.amt-net, t=$("#total"), btn=$("#cbtn");
+    const ok=diff===0||(state.leaveUnapplied&&diff>0);
+    t.className="total "+(ok?"ok":"bad");
+    t.innerHTML=`<span>Applied ${usd(net)} of ${usd(c.amt)}</span><span>${diff===0?"✓ matches":diff>0?(state.leaveUnapplied?`${usd(diff)} unapplied`:`${usd(diff)} to go`):`${usd(-diff)} over`}</span>`;
+    btn.disabled=!ok;
+  };
+  document.querySelectorAll("#apply input").forEach(el=>el.addEventListener("input",recompute));
+  recompute();
+}
+function leaveUnapplied(){const r=prompt("Why? (invoice coming later / overpayment / not sure)","invoice coming later"); if(r!==null){state.leaveUnapplied=true;wireApply();toast("Owner will see the unapplied amount")}}
+function confirmCheck(){
+  const c=state.checks[state.checkIdx];
+  Object.entries(state.applied[c.n]).forEach(([id,v])=>{const b=state.bills.find(x=>x.id===id); b.open-=v; b.status="In QuickBooks"});
+  state.history.unshift({t:`${c.payee} · check #${c.n} · ${usd(c.amt)}`,s:"Confirmed",cls:"",when:"now"});
+  toast(`Confirmed check #${c.n}`); state.leaveUnapplied=false;
+  if(state.checkIdx<state.checks.length-1){state.checkIdx++;setTimeout(render,700)} else {state.checkIdx=0;setTimeout(()=>location.hash="#s1",900)}
+}
+
+// ---------- S8 Note ----------
+function s8(){return bar("Note","s3b")+`<main><div class="card">
+  <div class="field"><label>What happened?</label><textarea rows="3" placeholder="Paid the Frito driver $180 cash for ticket 7731955"></textarea></div>
+  <div class="field"><label>Vendor (optional)</label><div class="v"><input readonly value="Frito-Lay" onclick="openVendors()"></div></div>
+  <div class="field"><label>Amount (optional)</label><div class="v"><input type="number" value="180.00"></div></div>
+  <div class="s">Notes are kept for records. If there's an amount, the owner will see it in their queue.</div></div></main>
+  <div class="footer"><button class="btn" onclick="toast('Saved · owner notified');setTimeout(()=>location.hash='#s1',800)">Save</button></div>${vendorSheet()}`}
+
+// ---------- S9 History ----------
+function s9(){return bar("My uploads")+`<main><div class="card">${state.history.map(h=>`<div class="row"><div class="thumb">📄</div><div class="grow"><div class="t">${h.t}</div><div class="s">${h.when}${h.s==="In QuickBooks"?" · Bill TxnID 3F2A-1…":""}</div></div><span class="chip ${h.cls}">${h.s}</span></div>`).join("")}</div></main>`+tabs("hist")}
+
+// ---------- Owner ----------
+const onav=(on)=>`<div class="topnav"><b style="margin-right:12px">PaperFlow</b><a href="#s10" class="${on==="s10"?"on":""}">Needs attention <span class="chip red">5</span></a><a href="#s11" class="${on==="s11"?"on":""}">Bills</a><a href="#s11" >Payments</a><a href="#s12" class="${on==="s12"?"on":""}">Open AP</a><a href="#s11">Archive</a><a href="#s11">Vendors</a><a href="#s11">Settings</a></div>`;
+function s10(){return onav("s10")+`<main>
+  <h2>New vendor (1)</h2>
+  <table><tr><td style="width:56px"><div class="thumb">inv</div></td><td><b>Bimbo Bakeries USA</b> · #B-90211 · $96.40<br><span class="s">Maria · today 2:10 PM · uploader typed “Bimbo Bakeries”</span></td><td class="acts"><button class="act p" onclick="toast('Vendor approved → VendorAdd queued')">Approve “Bimbo Bakeries”</button><button class="act">Merge into…</button></td></tr></table>
+  <h2>Unapplied payment (1)</h2>
+  <table><tr><td style="width:56px"><div class="thumb">chk</div></td><td><b>Sysco</b> · check #1048 · $842.10 · <span class="chip amber">$842.10 unapplied</span><br><span class="s">Jose · yesterday · reason: “invoice coming later”</span></td><td class="acts"><button class="act p" onclick="toast('Opens S7 as owner')">Apply now</button><button class="act">Record as plain check</button></td></tr></table>
+  <h2>Duplicate suspected (1)</h2>
+  <table><tr><td style="width:56px"><div class="thumb">inv</div></td><td><b>Frito-Lay</b> · #7731902 · $212.40<br><span class="s">Photo looks like one uploaded Sep 8 by Maria (hash distance 3)</span></td><td class="acts"><button class="act" onclick="toast('Voided')">It's a duplicate — void</button><button class="act p" onclick="toast('Kept')">Not a duplicate</button></td></tr></table>
+  <h2>QuickBooks error (1)</h2>
+  <table><tr><td style="width:56px"><div class="thumb">inv</div></td><td><b>Pepsi Bottling</b> · #22910 · $800.00<br><span class="s">QB 3140: “There is an invalid reference to QuickBooks Account "Cost of Goods Sold"” · attempt 3 of 3</span></td><td class="acts"><button class="act p" onclick="toast('Re-queued')">Retry</button><button class="act">Void</button></td></tr></table>
+  <h2>Money note (1)</h2>
+  <table><tr><td style="width:56px"><div class="thumb">📝</div></td><td>“Paid the Frito driver $180 cash for ticket 7731955” — Jose, today<br><span class="s">Frito-Lay · $180.00</span></td><td class="acts"><button class="act">Record as cash payment (V2)</button><button class="act p" onclick="toast('Kept as note')">Just keep the note</button></td></tr></table>
+  <h2>Awaiting approval — auto-push is off (3)</h2>
+  <table><tr><th></th><th>Doc</th><th>Vendor</th><th class="r">Amount</th><th>Confidence</th><th>By</th><th></th></tr>
+  <tr><td><input type="checkbox"></td><td>Bill #48812</td><td>Sysco</td><td class="r money">$842.10</td><td><span class="chip">0.95</span></td><td>Maria</td><td class="r"><button class="act p">Approve</button></td></tr>
+  <tr><td><input type="checkbox"></td><td>Check #1047 → #22910, #22987, CM-771</td><td>Pepsi Bottling</td><td class="r money">$1,264.50</td><td><span class="chip">0.90</span></td><td>Jose</td><td class="r"><button class="act p">Approve</button></td></tr>
+  <tr><td><input type="checkbox"></td><td>Credit CM-771</td><td>Pepsi Bottling</td><td class="r money">$35.50</td><td><span class="chip amber">0.78 · edited</span></td><td>Jose</td><td class="r"><button class="act p">Approve</button></td></tr></table>
+  <p><button class="act p" onclick="toast('3 approved → staged')">Approve selected</button></p></main>`}
+function s11(){return onav("s11")+`<main><h2>Bills · Sep 2026</h2>
+  <p class="s">Filters: vendor ▾ · date ▾ · status ▾ · uploader ▾ &nbsp; <button class="act">Export CSV</button></p>
+  <table><tr><th>Date</th><th>Vendor</th><th>Ref #</th><th class="r">Total</th><th class="r">Open</th><th>Status</th><th>By</th></tr>
+  ${state.bills.map(b=>`<tr><td>${b.date}</td><td>${b.vendor}</td><td>${b.ref}${b.kind==="credit"?' <span class="chip grey">credit</span>':""}</td><td class="r money">${usd(b.kind==="credit"?-b.open:b.open+ (b.id==="b2"?50000:0))}</td><td class="r money">${usd(b.open)}</td><td><span class="chip ${b.status==="Waiting for you"?"amber":b.status==="Confirmed"?"blue":""}">${b.status}</span></td><td>Maria</td></tr>`).join("")}
+  <tr><td colspan="3"><b>Total</b></td><td class="r money"><b>$2,094.10</b></td><td class="r money"><b>$1,796.50</b></td><td></td><td></td></tr></table></main>`}
+function s12(){
+  const byV={}; state.bills.forEach(b=>{byV[b.vendor]=byV[b.vendor]||{open:0,n:0,oldest:b.date,items:[]}; byV[b.vendor].open+=b.kind==="credit"?-b.open:b.open; if(b.kind==="bill"&&b.open>0){byV[b.vendor].n++} byV[b.vendor].items.push(b)});
+  return onav("s12")+`<main><h2>Open AP by vendor</h2><p class="s">What you owe right now, by vendor, with the invoices behind it. Sort: amount ▾ · age</p>
+  <table><tr><th>Vendor</th><th class="r">Open AP</th><th class="r">Open invoices</th><th>Oldest</th><th></th></tr>
+  ${Object.entries(byV).sort((a,b)=>b[1].open-a[1].open).map(([v,d])=>`<tr><td><b>${v}</b><details><summary class="s">invoices</summary>${d.items.map(b=>`<div class="s">${b.kind==="credit"?"credit ":"#"}${b.ref} · ${b.date} · ${usd(b.open)}</div>`).join("")}</details></td><td class="r money"><b>${usd(d.open)}</b></td><td class="r">${d.n}</td><td>${d.oldest}</td><td class="r"><button class="act">Pay…</button></td></tr>`).join("")}
+  <tr><td>Unapplied checks</td><td class="r money">−$842.10</td><td class="r">1</td><td>Sep 12</td><td class="r"><button class="act" data-go="s10">Apply</button></td></tr></table></main>`;
+}
+render();
+</script>
+</body>
+</html>

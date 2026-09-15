@@ -1,0 +1,15 @@
+import { anthropicProvider } from "./anthropic";
+import { mockProvider } from "./mock";
+import type { ExtractionProvider } from "../extract";
+
+export function providerFromEnv(env: NodeJS.ProcessEnv = process.env): ExtractionProvider {
+  switch (env.EXTRACTION_PROVIDER ?? "anthropic") {
+    case "mock":
+      return mockProvider({});
+    case "anthropic":
+      if (!env.ANTHROPIC_API_KEY || !env.EXTRACTION_MODEL) throw new Error("ANTHROPIC_API_KEY and EXTRACTION_MODEL required");
+      return anthropicProvider({ apiKey: env.ANTHROPIC_API_KEY, model: env.EXTRACTION_MODEL });
+    default:
+      throw new Error(`Unknown EXTRACTION_PROVIDER ${env.EXTRACTION_PROVIDER}`);
+  }
+}

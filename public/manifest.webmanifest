@@ -1,0 +1,11 @@
+{
+  "name": "PaperFlow",
+  "short_name": "PaperFlow",
+  "start_url": "/capture",
+  "display": "standalone",
+  "background_color": "#f6f4ef",
+  "theme_color": "#1f5f4a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
