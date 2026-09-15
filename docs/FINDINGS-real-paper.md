@@ -31,7 +31,11 @@ Harris Ranch delivery: weights and item codes, billed to a distributor, no amoun
 Gold Coast invoice: the employee wrote a unit cost next to each line (case price ÷ units) for shelf pricing. This is the V2 inventory hook already noted in the spec; `handwritten_notes` captures the raw text so nothing is lost meanwhile.
 
 ## 8. Volume and photo quality
-39 photos in five weeks, roughly 30–40 a month, one uploader (Shaista), the owner replying "Ok". That is far below the "hundreds of invoices" estimate — either most invoices never reach the group (likely: only ones needing a decision), or volume is seasonal. Either way the fixture bar in SPEC §13 (≥ 100 labeled images with a set mix) should be met by including older months, and the Phase 1 exit metric "≥ 90% of paper captured in-app" needs a denominator: count paper invoices received per week for one week by hand.
+39 photos in five weeks, roughly 30–40 a month, one uploader (Shaista), the owner replying "Ok". The owner confirms this is the real volume; the group only *feels* like hundreds because it is chatty. Consequences:
+- Model cost is negligible (well under $2/month). Optimize for accuracy and one-tap confirms, never for cost.
+- The value is not throughput. It is visibility (one statement showed $11,386 owed to a single vendor across 18 invoices that nothing tracked) and replacing the ask-for-permission loop (ADR 0005).
+- Phase 1 exit criterion is therefore **"Open AP by vendor matches the vendors' statements for the top 3 vendors"**, not a capture-rate percentage. `docs/phases.md` updated.
+- Fixture set: 100 labeled images means ~3 months of history. Scroll back in the group's Media panel and download older months; the timestamp matching works without chat text (sender is then unknown, which the labeler tolerates).
 Photos are phone shots at an angle on a desk, some glare, thermal paper, handwritten forms (CalPak). All were readable to a human at 1024px. 2000px downscale is fine.
 
 ## 9. The group is an approval channel

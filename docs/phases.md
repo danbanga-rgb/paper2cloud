@@ -32,7 +32,7 @@ Goal: staff use the PWA instead of WhatsApp; the owner sees everything in lists.
 - [ ] Owner: Bills list, Documents list, image viewer (signed URLs ≤ 10 min), CSV export.
 - [ ] Check flow may stop at "amount/payee/check#" confirmation in this phase — application UI is Phase 2 — but the payment row is created and an `unapplied_payment` exception is raised so nothing is lost.
 
-**Exit:** three weeks running alongside WhatsApp; ≥ 90% of paper captured in-app; median time-to-confirm < 2 minutes (measure it: `documents.updated_at` on confirm minus `captured_at`).
+**Exit:** three weeks running alongside WhatsApp; every check written in that period is in the app; Open AP by vendor matches the vendors' own statements for the top 3 vendors (Sudni first); median time-to-confirm < 2 minutes (measure it: `documents.updated_at` on confirm minus `captured_at`).
 
 ## Phase 2 — Control
 
