@@ -5,3 +5,5 @@ fixtures/images/*
 !fixtures/images/.gitkeep
 *.tsbuildinfo
 .DS_Store
+fixtures/raw/*
+!fixtures/raw/README.md
