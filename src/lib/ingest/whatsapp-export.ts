@@ -13,7 +13,8 @@ export interface ExportEntry {
   sender: string;
   /** ISO timestamp, local time of the exporting phone (no zone info in the file). */
   capturedAt: string;
-  filename: string;
+  /** null for "without media" exports — resolve later with matchOmittedToDownloads() */
+  filename: string | null;
   /** free text on the same message (caption), if any */
   caption: string | null;
   /** 1-based line number in the export, for original_message_ref */
@@ -24,6 +25,10 @@ const IOS = /^\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s+(\d{1,2}):(\d{2})(?::(\d{2}))
 const ANDROID = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),\s+(\d{1,2}):(\d{2})\s*([AP]M)?\s+-\s+([^:]+?):\s+(.*)$/i;
 const ATTACHED_IOS = /<attached:\s*([^>]+)>/i;
 const ATTACHED_ANDROID = /([\w.-]+\.(?:jpe?g|png|heic|pdf))\s*\(file attached\)/i;
+/** "Without media" exports: the photo is referenced but not included. filename becomes null. */
+const OMITTED = /<(image|video|document|sticker|audio) omitted>|\b(image|video|document|sticker|audio) omitted\b/i;
+/** WhatsApp Web / desktop download names carry the send time: "WhatsApp Image 2026-08-17 at 12.08.01 PM.jpeg" */
+const WEB_DOWNLOAD_NAME = /WhatsApp (?:Image|Video)\s+(\d{4})-(\d{2})-(\d{2}) at (\d{1,2})\.(\d{2})\.(\d{2})\s*([AP]M)?(?:\s*\(\d+\))?\.\w+$/i;
 
 export function parseWhatsAppExport(text: string): ExportEntry[] {
   const out: ExportEntry[] = [];
@@ -51,12 +56,13 @@ export function parseWhatsAppExport(text: string): ExportEntry[] {
     }
 
     const att = ATTACHED_IOS.exec(body) ?? ATTACHED_ANDROID.exec(body);
-    if (!att) {
+    const omitted = att ? null : OMITTED.exec(body);
+    if (!att && !omitted) {
       last = null; // a text message; don't attach later lines to an old image
       return;
     }
-    const filename = att[1]!.trim();
-    const caption = body.replace(att[0], "").trim() || null;
+    const filename = att ? att[1]!.trim() : null;
+    const caption = body.replace((att ?? omitted)![0], "").trim() || null;
     last = { sender, capturedAt: ts, filename, caption, line: idx + 1 };
     out.push(last);
   });
@@ -73,6 +79,36 @@ function toIso(y: string, mo: string, d: string, h: string, mi: string, s: strin
   const year = y.length === 2 ? `20${y}` : y;
   const pad = (n: string | number) => String(n).padStart(2, "0");
   return `${year}-${pad(mo)}-${pad(d)}T${pad(hour)}:${pad(mi)}:${pad(s)}`;
+}
+
+/**
+ * Match "<image omitted>" entries to files downloaded from WhatsApp Web, whose names carry the
+ * send timestamp. Tolerance covers WhatsApp's own rounding; when several entries fall within it,
+ * the closest wins and each file is used once. Returns the entries with filename filled where matched.
+ */
+export function matchOmittedToDownloads(entries: ExportEntry[], filenames: string[], toleranceSec = 3): ExportEntry[] {
+  const files = filenames
+    .map((f) => {
+      const m = WEB_DOWNLOAD_NAME.exec(f);
+      if (!m) return null;
+      const iso = toIso(m[1]!, m[2]!, m[3]!, m[4]!, m[5]!, m[6]!, m[7]);
+      return { name: f, t: Date.parse(iso) };
+    })
+    .filter((x): x is { name: string; t: number } => x !== null);
+  const used = new Set<string>();
+  return entries.map((e) => {
+    if (e.filename) return e;
+    const t = Date.parse(e.capturedAt);
+    let best: { name: string; d: number } | null = null;
+    for (const f of files) {
+      if (used.has(f.name)) continue;
+      const d = Math.abs(f.t - t);
+      if (d <= toleranceSec * 1000 && (!best || d < best.d)) best = { name: f.name, d };
+    }
+    if (!best) return e;
+    used.add(best.name);
+    return { ...e, filename: best.name };
+  });
 }
 
 /**

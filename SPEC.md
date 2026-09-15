@@ -18,6 +18,7 @@ This document is the contract for the implementing agent. Sections marked **CONT
 - Extraction with per-field confidence; uploader confirmation card; vendor alias learning.
 - Check-to-invoice application UI (one check → N bills, partial payments, credits).
 - Owner dashboard: needs-attention queue, bills, payments, open AP by vendor, archive search.
+- **Pay requests** (added after reading the real group chat): staff ask before writing a check ("Gold Coast $1581.51 and Calpak $1979.48, okay?"), the owner replies "Ok", then the check is written. The app models this: uploader selects open invoices → owner approves → the approved set pre-ticks the check confirm card (§10 S7). See ADR 0005.
 - QuickBooks Desktop push via the **existing qbXML / Web Connector interface from the Synergie Timesheet App** (reused, not rebuilt): VendorQuery/VendorAdd, BillAdd, VendorCreditAdd, BillPaymentCheckAdd, with dedupe and a sync log.
 - Approval-gated push first, feature-flag to fully automatic for confirmed documents.
 
@@ -190,6 +191,22 @@ create table payment_applications (
   bill_id uuid not null references bills(id),
   amount numeric(12,2) not null check (amount > 0),  -- for kind='credit' bills this is credit applied
   unique (payment_id, bill_id)
+);
+
+create table pay_requests (                -- staff asks "can I pay these?"; owner answers (ADR 0005)
+  id uuid primary key,
+  vendor_id uuid not null references vendors(id),
+  requested_by uuid not null references app_users(id),
+  status text not null default 'requested' check (status in ('requested','approved','declined','fulfilled','cancelled')),
+  note text,
+  decided_by uuid references app_users(id), decided_at timestamptz, decision_note text,
+  payment_id uuid references payments(id)   -- set when the check photo arrives and is applied
+);
+create table pay_request_items (
+  pay_request_id uuid not null references pay_requests(id) on delete cascade,
+  bill_id uuid not null references bills(id),
+  amount numeric(12,2) not null,
+  primary key (pay_request_id, bill_id)
 );
 
 create type sync_status as enum ('queued','sent','ok','error','skipped');
@@ -369,6 +386,8 @@ Canonical `request_json` is produced by the app; the Timesheet App's qbXML layer
 
 **Confirm card (check).** One card per check found. Check #, payee, amount, date. Then **"Which invoices does this pay?"**: list of the payee's open bills (newest first, each with open balance), pre-ticked from `memo_invoice_numbers` and from any invoice captured by the same user in the last 15 minutes with the same vendor. Running total vs check amount shown in red until equal; a "partial" control per bill to type a smaller amount; open credits listed as tick-to-apply. If nothing matches: "Invoice not captured yet — capture it now" (opens invoice flow and links back) or "Leave unapplied" (creates `unapplied_payment` exception).
 
+**Ask to pay (S16).** From Home ("Ask to pay") or from a vendor's open invoices: tick invoices, optional note, send. Owner sees it in the queue as `pay_request` with Approve / Decline / "Pay a different set"; the uploader gets a push with the answer. When a check for that vendor is later confirmed, the approved request's invoices are pre-ticked (ahead of memo and 15-minute rules) and the request becomes `fulfilled`. Open approved requests show on Open AP as "approved to pay".
+
 **Note.** Free text + optional vendor + optional amount; creates `money_note` exception if amount present.
 
 **History.** The user's own documents with status; tap to see images and what happened (including QB TxnID once pushed).
@@ -416,7 +435,7 @@ A confirmed document is auto-approved when **all** hold: `auto_push_enabled = tr
 |---|---|---|
 | 0 — Fixtures | Export importer, labeling helper, extraction service, prompt tuning | §13 thresholds met on the fixture set. |
 | 1 — Capture | PWA (login, capture, offline, confirm cards), documents/extractions/bills/payments tables, basic owner lists | Store runs it alongside WhatsApp for 3 weeks; ≥ 90% of paper captured in-app; median time-to-confirm < 2 min. |
-| 2 — Control | Vendor master + aliases, check application UI, exceptions queue, open-AP view, archive search | Owner queue < 10 items/week; every check applied or explicitly unapplied. |
+| 2 — Control | Vendor master + aliases, check application UI, pay requests, exceptions queue, open-AP view, archive search | Owner queue < 10 items/week; every check applied or explicitly unapplied. |
 | 3 — QB push | `qb_sync` producer, integration with existing qbXML layer, dedupe, retries, approval-gated | One full month pushed with zero manual QB entry; bank-feed matching one click per check. |
 | 4 — Autopilot | Auto-push flag on, daily summary, WhatsApp posting stopped | Owner intervention only via exceptions queue. |
 

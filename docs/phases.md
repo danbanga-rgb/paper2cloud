@@ -42,6 +42,7 @@ Goal: every check is applied to invoices; the owner's queue is small.
 - [ ] Needs-attention queue (S10) with one-action resolution per reason code.
 - [ ] Open AP by vendor (S12) from the `open_ap_by_vendor` view; archive search (S13).
 - [ ] Notes with money → `money_note` exception.
+- [ ] Pay requests (SPEC S16, ADR 0005): uploader ticks invoices → owner approves/declines from the queue → approved set pre-ticks the later check confirm → request `fulfilled`.
 
 **Exit:** owner queue < 10 items/week for two consecutive weeks; zero checks left in `unapplied_payment` older than 7 days without an explicit owner decision.
 

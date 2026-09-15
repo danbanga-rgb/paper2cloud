@@ -32,6 +32,9 @@ Fields: Check #, Payee (vendor, proposed), Amount, Date, Memo. Amount gets the a
 List of the payee's open bills (newest first): ref #, date, open balance, checkbox. Pre-ticked from memo numbers and from any invoice this user captured in the last 15 minutes for this vendor. Open credits listed under "Credits to apply". Each ticked row can be made partial (tap amount → edit). Sticky footer: "Applied $X of $Y" turning green when equal. Links: **Invoice not here — capture it now** (→ S2, returns here with it pre-ticked), **Leave $Z unapplied** (requires a reason chip: "invoice coming later" / "overpayment" / "not sure").
 Confirm is disabled until applied == amount or an unapplied reason is chosen.
 
+### S16 Ask to pay
+Entry: Home button "Ask to pay", or a vendor row on the uploader's open-invoices list. Pick vendor → tick open invoices (same list component as S7) → optional note → Send. Status chip afterwards: Asked · Approved · Declined. Owner side: appears in S10 as its own group with Approve / Decline / edit-the-set; approved requests show on S12 as "approved to pay". When the matching check is confirmed (S6), those invoices are pre-ticked first.
+
 ### S8 Note
 Text box; optional vendor picker; optional amount. "Save". If amount present, tells the user "the owner will see this".
 
