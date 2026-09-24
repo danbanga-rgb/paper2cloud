@@ -4,13 +4,6 @@ Append here when a CONTRACT seems wrong or a choice isn't covered. One entry per
 
 ## Open
 
-### D1 — Phase order for cloud sessions (2026-09-24)
-**Context.** `docs/KICKOFF-PROMPT.md` and CLAUDE.md rule 3 say work starts at Phase 0 and phases run strictly in order. The 2026-09-24 session brief asked for Phase 1 foundation. The 39 fixture photos are git-ignored, so they are not in cloud containers, and no API key is configured there. That makes Phase 0 extraction runs impossible in the cloud as things stand.
-**What was done.** Only work that needs no credentials and no photos: the Anthropic provider (Phase 0 item), migration 0002 (listed in both phases, not applied), and the Phase 1 server plumbing (env, Supabase clients, auth guard, document/upload/extract routes). No UI screens were built and nothing was applied or deployed.
-**Options.** (a) Return to strict order: finish Phase 0 (label page, extraction of the 39, scoring) before any more Phase 1. (b) Run Phase 0 and Phase 1 in parallel; Phase 1 does not ship until the §13 thresholds pass.
-**Recommendation.** (a) for the next session: build `/label` next, and have the photos made available to that session (D6).
-**Decision:**
-
 ### D2 — `pay_requests` tables are in SPEC §5 but not in 0001
 **Context.** SPEC §5 (CONTRACT) defines `pay_requests` and `pay_request_items`, but `0001_init.sql` does not create them. §14b's list for 0002 doesn't include them either. ADR 0005 is still "proposed".
 **Options.** (a) Add them in `0003_pay_requests.sql` once ADR 0005 is accepted. (b) Fold them into 0002 now.
@@ -42,3 +35,11 @@ Append here when a CONTRACT seems wrong or a choice isn't covered. One entry per
 ## Resolved
 
 _(move entries here with the decision and date)_
+
+### D1 — Phase order for cloud sessions (2026-09-24)
+**Context.** `docs/KICKOFF-PROMPT.md` and CLAUDE.md rule 3 say work starts at Phase 0 and phases run strictly in order. The 2026-09-24 session brief asked for Phase 1 foundation. The 39 fixture photos are git-ignored, so they are not in cloud containers, and no API key is configured there. That makes Phase 0 extraction runs impossible in the cloud as things stand.
+**What was done.** Only work that needs no credentials and no photos: the Anthropic provider (Phase 0 item), migration 0002 (listed in both phases, not applied), and the Phase 1 server plumbing (env, Supabase clients, auth guard, document/upload/extract routes). No UI screens were built and nothing was applied or deployed.
+**Options.** (a) Return to strict order: finish Phase 0 (label page, extraction of the 39, scoring) before any more Phase 1. (b) Run Phase 0 and Phase 1 in parallel; Phase 1 does not ship until the §13 thresholds pass.
+**Recommendation.** (a) for the next session: build `/label` next, and have the photos made available to that session (D6).
+**Decision:** (a) — owner, 2026-09-24. Build `/label` next.
+
