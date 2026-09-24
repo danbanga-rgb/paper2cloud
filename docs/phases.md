@@ -10,7 +10,7 @@ Goal: prove the vision model reads *this store's* paper well enough, and freeze 
 - [ ] Owner exports the WhatsApp group ("Export chat" → with media) and drops it in `fixtures/raw/` (git-ignored).
 - [ ] `npm run import:whatsapp -- fixtures/raw/_chat.txt` produces `fixtures/images/*` and `fixtures/manifest.json` (sender, timestamp, filename per image). Parser is in `src/lib/ingest/whatsapp-export.ts`; the script only wires it to the filesystem.
 - [ ] Implement `AnthropicProvider` (or the provider chosen in `.env`) behind `ExtractionProvider` in `src/lib/extraction/`. Prompts are the `v1` files; do not edit them in place. (code + unit tests done 2026-09-24; not yet run against a real photo — needs API key)
-- [ ] Build the labeling helper: a tiny local page (`npm run dev` → `/label`) that shows an image beside the model's draft JSON and saves corrected JSON to `fixtures/labels/<image>.json` in the §6 shapes.
+- [ ] Build the labeling helper: a tiny local page (`npm run dev` → `/label`) that shows an image beside the model's draft JSON and saves corrected JSON to `fixtures/labels/<image>.json` in the §6 shapes. (built 2026-09-24: editable fields not raw JSON, composite photos, multi-page sets, adjusted-total question, skip; drafts kept in `fixtures/drafts/`. Verified with the mock provider on synthetic images — not yet on the real 39.)
 - [ ] Owner labels ≥ 100 images meeting the mix in SPEC §13.
 - [ ] `npm run fixtures:score` reports per-field accuracy and the wrong-but-confident rate; iterate prompts (v2, v3, …) until SPEC §13 thresholds pass. Record each run's numbers in `fixtures/SCORES.md`.
 
