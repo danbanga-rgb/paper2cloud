@@ -22,7 +22,7 @@ function basename(url: string): string {
 }
 
 export const DEFAULT_CLASSIFY = {
-  doc_type: "invoice", documents_in_image: 1, is_continuation_of_previous: false, legibility: "good", confidence: 0.95,
+  doc_type: "invoice", documents_in_image: 1, also_contains: [], is_continuation_of_previous: false, legibility: "good", confidence: 0.95,
 };
 export const DEFAULT_INVOICE = {
   vendor_name_printed: { value: "SYSCO SAN FRANCISCO", confidence: 0.97 },
@@ -37,6 +37,9 @@ export const DEFAULT_INVOICE = {
   is_credit: false,
   paid_stamp_or_cod: { value: false, confidence: 0.8 },
   check_number_referenced: { value: null, confidence: 0 },
+  paid_date_referenced: { value: null, confidence: 0 },
+  handwritten_adjusted_total: { value: null, confidence: 0 },
+  handwritten_notes: [],
   page_count_seen: 1,
   issues: [],
 };

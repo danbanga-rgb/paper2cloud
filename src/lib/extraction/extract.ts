@@ -11,6 +11,8 @@ import {
   RecordOnlyPayloadSchema,
   StatementPayloadSchema,
   overallConfidence,
+  payloadSchemaFor,
+  type CheckPayload,
   type Classification,
   type DocType,
   type ExtractionHint,
@@ -140,6 +142,7 @@ export async function extractDocument(
     payload = p;
   } else if (resolvedDocType === "check") {
     const checks = ChecksPayloadSchema.parse(raw);
+    redactChecks(checks);
     for (const ch of checks) {
       const num = toCents(ch.amount_numeric.value);
       const written = parseWrittenAmount(ch.amount_written.value);
@@ -166,7 +169,8 @@ export async function extractDocument(
     const r = await provider.call({ system: sys, user: `Document type: ${kind}. Extract ONLY the ${kind} in this photo; ignore the other paper.`, images, jsonSchema: {} });
     latencyMs += r.latencyMs;
     costUsd += r.costUsd ?? 0;
-    const parsed = kind === "check" ? ChecksPayloadSchema.parse(JSON.parse(r.text)) : kind === "invoice" || kind === "credit_memo" ? InvoicePayloadSchema.parse(JSON.parse(r.text)) : RecordOnlyPayloadSchema.parse(JSON.parse(r.text));
+    const parsed = payloadSchemaFor(kind).parse(JSON.parse(r.text));
+    if (kind === "check") redactChecks(parsed as CheckPayload[]);
     companions.push({ docType: kind, payload: parsed, overallConfidence: overallConfidence(kind, parsed) });
   }
 
@@ -183,4 +187,38 @@ export async function extractDocument(
     latencyMs,
     costUsd: costUsd || null,
   };
+}
+
+/**
+ * SPEC §12 defence in depth: the check prompt forbids transcribing the MICR line, but if the model
+ * slips, scrub it before anything is stored. Redacts text carrying MICR symbols and long digit runs
+ * (routing + account); records that it happened (without the digits).
+ */
+export function redactChecks(checks: CheckPayload[]): void {
+  for (const ch of checks) {
+    let hit = false;
+    const scrub = (t: string) => {
+      const out = redactMicr(t);
+      if (out !== t) hit = true;
+      return out;
+    };
+    for (const f of [ch.check_number, ch.payee, ch.amount_written, ch.memo]) {
+      if (f.value !== null) f.value = scrub(f.value);
+    }
+    ch.memo_invoice_numbers = ch.memo_invoice_numbers.map(scrub).filter((n) => n !== "[redacted]");
+    ch.issues = ch.issues.map(scrub);
+    if (hit) ch.issues.push("bank numbers were present in model output and were redacted");
+  }
+}
+
+const MICR_SYMBOLS = /[\u2446-\u2449]/;
+
+/**
+ * A routing number (9) plus an account number (≥ 4) makes a run of ≥ 13 digits; invoice numbers on
+ * this store's paper are far shorter. A bare 9-digit run is left alone because it is indistinguishable
+ * from an invoice number and a routing number alone identifies only the bank.
+ */
+export function redactMicr(text: string): string {
+  if (MICR_SYMBOLS.test(text)) return "[redacted]";
+  return text.replace(/\d[\d\s-]{11,}\d/g, (run) => (run.replace(/\D/g, "").length >= 13 ? "[redacted]" : run));
 }

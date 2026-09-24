@@ -34,6 +34,8 @@ export const EXCEPTION_REASONS = [
   "qb_error",
   "money_note",
   "over_applied",
+  /** SPEC §6.3b / §8: bill created from a statement row with no photo (migration 0002). */
+  "statement_backfill",
 ] as const;
 export type ExceptionReason = (typeof EXCEPTION_REASONS)[number];
 export const ExceptionReasonSchema = z.enum(EXCEPTION_REASONS);
